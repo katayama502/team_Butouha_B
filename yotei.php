@@ -166,6 +166,30 @@ try {
       margin-bottom: 4px;
     }
 
+    .reservation-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, rgba(255, 200, 87, 0.9), rgba(255, 150, 150, 0.9));
+      color: #212529;
+      width: 100%;
+      max-width: 720px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      font-weight: 600;
+    }
+
+    .reservation-banner .icon {
+      font-size: 1.4rem;
+    }
+
+    .reservation-banner .text {
+      flex: 1;
+      font-size: 0.95rem;
+    }
+
     @media (max-width: 768px) {
       .hamburger {
         display: block;
@@ -193,6 +217,12 @@ try {
       .calendar {
         padding-top: 60px;
       }
+
+      .reservation-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
     }
   </style>
 </head>
@@ -206,6 +236,10 @@ try {
     <div class="calendar">
       <h2 id="calendarTitle">カレンダー</h2>
       <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="reservation-banner" id="reservationBanner" hidden>
+        <span class="icon">🏢</span>
+        <span class="text" id="reservationBannerText"></span>
+      </div>
       <div class="schedule" id="scheduleDisplay">📅 日付をクリックすると予約と予定が表示されます。</div>
     </div>
   </div>
@@ -250,6 +284,8 @@ try {
     const hamburgerBtn = document.getElementById("hamburgerBtn");
     const overlay = document.getElementById("overlay");
     const scheduleDisplay = document.getElementById("scheduleDisplay");
+    const reservationBanner = document.getElementById("reservationBanner");
+    const reservationBannerText = document.getElementById("reservationBannerText");
 
     const reservationsByDate = reservationData.reduce((acc, r) => {
       const key = r.datetime.slice(0, 10);
@@ -295,6 +331,8 @@ try {
 
     function renderSchedule(dateKey, label) {
       scheduleDisplay.innerHTML = '';
+      reservationBanner.hidden = true;
+      reservationBannerText.textContent = '';
 
       const title = document.createElement('div');
       title.className = 'title';
@@ -332,6 +370,14 @@ try {
         scheduleDisplay.appendChild(none);
         return;
       }
+
+      const bannerItems = reservations.map(r => {
+        const room = roomLabels[r.room] || '会議室';
+        const note = r.note ? `（${r.note}）` : '';
+        return `${formatTime(r.datetime)} ${room}：${r.name}${note}`;
+      });
+      reservationBannerText.textContent = `会議室予約：${bannerItems.join(' ／ ')}`;
+      reservationBanner.hidden = false;
 
       const list = document.createElement('ul');
       reservations.forEach(r => {
