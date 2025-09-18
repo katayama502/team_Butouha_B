@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>高橋建設 ホーム</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            width: 100%;
+            padding: 30px;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        button {
+            padding: 20px 40px;
+            font-size: 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 80%;
+            max-width: 400px;
+            color: white;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-reserve {
+            background-color: #e74c3c; /* 赤 */
+        }
+
+        .btn-calender {
+            background-color: #27ae60; /* 緑 */
+        }
+
+        .btn-important {
+            background-color: #c0392b; /* 赤（濃いめ） */
+        }
+
+     .btn-other {
+            background-color: #2980b9; /* 青 */
+        }
+
+        .label {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                font-size: 32px;
+                padding: 25px;
+            }
+
+            button {
+                font-size: 28px;
+                width: 90%;
+            }
+
+            .label {
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    高橋建設
+</header>
+
+<div class="main">
+    <div class="button-group">
+        <a href="reserve.php"> <button class="btn-reserve">予約</button></a>
+        <a href="yotei.php"> <button class="btn-calender">カレンダー</button></a>
+    </div>
+
+    <div class="button-group">
+        <div class="label">＜お知らせ＞</div>
+        <button class="btn-important" onclick="alert('重要なお知らせを表示')">重要</button>
+        <button class="btn-other" onclick="alert('その他のお知らせを表示')">その他</button>
+    </div>
+</div>
+
+</body>
+</html>
