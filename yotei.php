@@ -1,3 +1,19 @@
+<?php
+require_once __DIR__ . '/db.php';
+
+date_default_timezone_set('Asia/Tokyo');
+$reservations = [];
+$reservationsError = null;
+
+try {
+    $pdo = db();
+    db_initialize($pdo);
+    $stmt = $pdo->query('SELECT id, room, datetime, name, COALESCE(note, "") AS note FROM reservations ORDER BY datetime');
+    $reservations = $stmt->fetchAll();
+} catch (Throwable $e) {
+    $reservationsError = $e->getMessage();
+}
+?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -61,7 +77,7 @@
     }
 
     .sidebar {
-      width: 120px;
+      width: 140px;
       background: #f8f9fa;
       padding: 10px;
       box-sizing: border-box;
@@ -98,7 +114,7 @@
       grid-template-columns: repeat(7, 1fr);
       gap: 4px;
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
     }
 
     .day {
@@ -109,6 +125,15 @@
       font-size: 1rem;
       padding: 12px;
       width: 100%;
+      position: relative;
+    }
+
+    .day button.has-reservation::after {
+      content: '\25CF';
+      display: block;
+      font-size: 0.7rem;
+      color: #e63946;
+      margin-top: 4px;
     }
 
     .schedule {
@@ -117,7 +142,28 @@
       border-top: 1px solid #ccc;
       background: #f8f9fa;
       width: 100%;
+      max-width: 720px;
       font-size: 0.95rem;
+    }
+
+    .schedule .title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .schedule .section-title {
+      font-weight: 600;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+
+    .schedule ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .schedule li {
+      margin-bottom: 4px;
     }
 
     @media (max-width: 768px) {
@@ -137,6 +183,7 @@
         transform: translateX(-100%);
         z-index: 1000;
         box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        max-width: 70vw;
       }
 
       .sidebar.open {
@@ -159,11 +206,14 @@
     <div class="calendar">
       <h2 id="calendarTitle">カレンダー</h2>
       <div class="calendar-grid" id="calendarGrid"></div>
-      <div class="schedule" id="scheduleDisplay">📅 日付をクリックすると予定が表示されます。</div>
+      <div class="schedule" id="scheduleDisplay">📅 日付をクリックすると予約と予定が表示されます。</div>
     </div>
   </div>
 
   <script>
+    const reservationData = <?php echo json_encode($reservations, JSON_UNESCAPED_UNICODE); ?>;
+    const reservationsError = <?php echo json_encode($reservationsError, JSON_UNESCAPED_UNICODE); ?>;
+
     const monthNames = ["4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "1月", "2月", "3月"];
     const monthNumbers = [3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2];
 
@@ -201,6 +251,28 @@
     const overlay = document.getElementById("overlay");
     const scheduleDisplay = document.getElementById("scheduleDisplay");
 
+    const reservationsByDate = reservationData.reduce((acc, r) => {
+      const key = r.datetime.slice(0, 10);
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(r);
+      return acc;
+    }, {});
+
+    Object.values(reservationsByDate).forEach(list => {
+      list.sort((a, b) => a.datetime.localeCompare(b.datetime));
+    });
+
+    const roomLabels = {
+      large: "大会議室",
+      small: "小会議室"
+    };
+
+    if (reservationsError) {
+      scheduleDisplay.textContent = "⚠️ 予約情報を読み込めませんでした。管理者にお問い合わせください。";
+    }
+
     monthNames.forEach((name, i) => {
       const btn = document.createElement("button");
       btn.textContent = name;
@@ -211,6 +283,66 @@
       };
       monthButtons.appendChild(btn);
     });
+
+    function formatDateLabel(year, month, day) {
+      return `${year}年${month}月${day}日`;
+    }
+
+    function formatTime(datetime) {
+      const dt = new Date(datetime.replace(' ', 'T'));
+      return dt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderSchedule(dateKey, label) {
+      scheduleDisplay.innerHTML = '';
+
+      const title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = `📅 ${label} の予定`;
+      scheduleDisplay.appendChild(title);
+
+      const staticEvent = schedules[dateKey];
+      if (staticEvent) {
+        const section = document.createElement('div');
+        section.className = 'section-title';
+        section.textContent = '社内行事';
+        scheduleDisplay.appendChild(section);
+
+        const paragraph = document.createElement('p');
+        paragraph.textContent = staticEvent;
+        scheduleDisplay.appendChild(paragraph);
+      }
+
+      if (reservationsError) {
+        const warning = document.createElement('p');
+        warning.textContent = '予約情報を表示できません。';
+        scheduleDisplay.appendChild(warning);
+        return;
+      }
+
+      const reservations = reservationsByDate[dateKey] || [];
+      const sectionTitle = document.createElement('div');
+      sectionTitle.className = 'section-title';
+      sectionTitle.textContent = '会議室予約';
+      scheduleDisplay.appendChild(sectionTitle);
+
+      if (reservations.length === 0) {
+        const none = document.createElement('p');
+        none.textContent = '予約は登録されていません。';
+        scheduleDisplay.appendChild(none);
+        return;
+      }
+
+      const list = document.createElement('ul');
+      reservations.forEach(r => {
+        const li = document.createElement('li');
+        const room = roomLabels[r.room] || '会議室';
+        const note = r.note ? `（${r.note}）` : '';
+        li.textContent = `${formatTime(r.datetime)} ${room}：${r.name}${note}`;
+        list.appendChild(li);
+      });
+      scheduleDisplay.appendChild(list);
+    }
 
     function renderCalendar(month) {
       const year = (month >= 3) ? new Date().getFullYear() : new Date().getFullYear() + 1;
@@ -246,43 +378,44 @@
         btn.textContent = d;
         btn.className = "btn w-100";
 
-        // 色分けロジック（曜日優先、祝日は平日のみ赤）
         if (dayOfWeek === 0) {
-          btn.classList.add("btn-outline-danger"); // 日曜（赤）
+          btn.classList.add("btn-outline-danger");
         } else if (dayOfWeek === 6) {
-          btn.classList.add("btn-outline-primary"); // 土曜（青）
+          btn.classList.add("btn-outline-primary");
         } else if (isHoliday) {
-          btn.classList.add("btn-outline-danger"); // 平日の祝日（赤）
+          btn.classList.add("btn-outline-danger");
         } else {
-          btn.classList.add("btn-outline-secondary"); // 平日（グレー）
+          btn.classList.add("btn-outline-secondary");
+        }
+
+        if ((reservationsByDate[dateKey] || []).length > 0) {
+          btn.classList.add('has-reservation');
         }
 
         if (isHoliday) {
-          btn.title = holidays[dateKey]; // ツールチップに祝日名
+          btn.title = holidays[dateKey];
         }
 
         btn.onclick = () => {
-          const scheduleText = schedules[dateKey] || "予定は登録されていません。";
-          scheduleDisplay.textContent = `📅 ${year}年${month + 1}月${d}日 の予定：${scheduleText}`;
+          const label = formatDateLabel(year, month + 1, d);
+          renderSchedule(dateKey, label);
         };
 
         cell.appendChild(btn);
         calendarGrid.appendChild(cell);
       }
 
-      // 今日の日付を自動選択（初期表示時）
       const today = new Date();
       const todayYear = today.getFullYear();
       const todayMonth = today.getMonth();
       const todayDate = today.getDate();
       const calendarYear = (todayMonth >= 3) ? todayYear : todayYear + 1;
-      const calendarMonth = (todayMonth >= 3) ? todayMonth : todayMonth;
 
-      if (month === calendarMonth) {
+      if (month === todayMonth && year === calendarYear) {
         const buttons = document.querySelectorAll(".calendar-grid .day button");
-        buttons.forEach(btn => {
-          if (btn.textContent === String(todayDate)) {
-            btn.click();
+        buttons.forEach(button => {
+          if (Number(button.textContent) === todayDate) {
+            button.click();
           }
         });
       }
@@ -300,11 +433,9 @@
       hamburgerBtn.classList.remove("hidden");
     }
 
-    // 初期表示：今月のカレンダーを表示
     const now = new Date();
-    const currentMonth = now.getMonth(); // 0〜11
-    const displayMonth = currentMonth;
-    renderCalendar(displayMonth);
+    const currentMonth = now.getMonth();
+    renderCalendar(currentMonth);
   </script>
 </body>
 </html>
