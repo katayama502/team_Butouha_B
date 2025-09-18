@@ -13,7 +13,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      height: 100vh;
+      min-height: 100vh;
     }
 
     header {
@@ -44,7 +44,7 @@
       gap: 20px;
     }
 
-    button {
+    .action-button {
       padding: 20px 40px;
       font-size: 24px;
       border: none;
@@ -57,22 +57,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .action-button:hover {
+      opacity: 0.85;
     }
 
     .btn-reserve {
-      background-color: #e74c3c; /* 赤 */
+      background-color: #e74c3c;
     }
 
     .btn-calendar {
-      background-color: #27ae60; /* 緑 */
+      background-color: #27ae60;
     }
 
     .btn-important {
-      background-color: #c0392b; /* 赤（濃いめ） */
+      background-color: #c0392b;
     }
 
     .btn-other {
-      background-color: #2980b9; /* 青 */
+      background-color: #2980b9;
     }
 
     .label {
@@ -89,13 +95,13 @@
         padding: 25px;
       }
 
-      button {
-        font-size: 28px;
+      .action-button {
+        font-size: 22px;
         width: 90%;
       }
 
       .label {
-        font-size: 30px;
+        font-size: 26px;
       }
     }
   </style>
@@ -108,14 +114,14 @@
 
 <div class="main">
   <div class="button-group">
-    <button class="btn-reserve" onclick="alert('予約ページへ移動します')">予約</button>
-    <button class="btn-calendar" onclick="alert('カレンダーを表示します')">カレンダー</button>
+    <a class="action-button btn-reserve" href="reserve.php">予約ページへ</a>
+    <a class="action-button btn-calendar" href="yotei.php">予定（年間カレンダー）を見る</a>
   </div>
 
   <div class="button-group">
     <div class="label">＜お知らせ＞</div>
-    <button class="btn-important" onclick="alert('重要なお知らせを表示')">重要</button>
-    <button class="btn-other" onclick="alert('その他のお知らせを表示')">その他</button>
+    <a class="action-button btn-important" href="#" onclick="alert('重要なお知らせは現在準備中です'); return false;">重要</a>
+    <a class="action-button btn-other" href="#" onclick="alert('その他のお知らせは現在準備中です'); return false;">その他</a>
   </div>
 </div>
 
